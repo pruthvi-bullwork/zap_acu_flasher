@@ -1,0 +1,26 @@
+# Secrets (CRITICAL)
+service_account.json
+.env
+
+# Large Files & Payloads
+Linux_for_Tegra/
+configurations/
+*.deb
+backups/
+images/
+extracted_caches/
+downloads/
+*.img
+*.zst
+*.zip
+
+# Python & System
+__pycache__/
+*.pyc
+.vscode/
+.DS_Store
+
+# Keep only the logic
+!*.sh
+!*.py
+!*.md
