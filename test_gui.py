@@ -9,20 +9,25 @@ import queue
 
 from sheets_db import SheetsDB
 
+# This gets the exact folder where test_gui.py is located, no matter where it's installed!
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+USER_HOME = os.path.expanduser("~") # Dynamically gets the current user's home folder (e.g. /home/john)
+
 # ========================================================
 # CONSTANTS & FOLDER IDS
 # ========================================================
 GOOGLE_DRIVE_FOLDER_ID = "0AM3yJfNKTJr6Uk9PVA" 
 PLATFORM_DRIVE_FOLDER_ID = "14QY2BS1efMujYIlnm1NR1VmXNf7zrJc3" 
 
-LOCAL_BACKUPS_DIR = "/home/pruthvir/Documents/acu_fleet_manager/jetson_image_toolkit/backups"
-FLASH_SCRIPT_PATH = "/home/pruthvir/Documents/acu_fleet_manager/jetson_image_toolkit/flash_from_zip.sh"
+# Dynamically route paths based on where the app is installed
+LOCAL_BACKUPS_DIR = os.path.join(BASE_DIR, "jetson_image_toolkit", "backups")
+FLASH_SCRIPT_PATH = os.path.join(BASE_DIR, "jetson_image_toolkit", "flash_from_zip.sh")
 
 HOST_SEARCH_PATHS = [
     LOCAL_BACKUPS_DIR,
-    "/home/pruthvir/jetson_image_toolkit/backups",
-    "/home/pruthvir/Downloads",
-    "/home/pruthvir/Downloads/images"
+    os.path.join(USER_HOME, "jetson_image_toolkit", "backups"),
+    os.path.join(USER_HOME, "Downloads"),
+    os.path.join(USER_HOME, "Downloads", "images")
 ]
 
 # ========================================================
@@ -307,7 +312,7 @@ class RegistrationWindow(tk.Toplevel):
         form_layout = [
             ("Platform Version:", "plat_ver_raw", platform_options), 
             ("Configuration:", "config", config_options),
-            ("Vehicle Number:", "veh_num", ["", "VEH-", "NIL"]),
+            ("Vehicle Number:", "veh_num", ["", "PR-", "NIL"]),
             ("ACU Box Number:", "acu_id", ["", "ACU-", "NIL"]),
             ("Router Number:", "router", ["", "NIL"]),
             ("M2M SIM Number:", "m2m_sim", ["", "NIL"])
@@ -363,9 +368,20 @@ class RegistrationWindow(tk.Toplevel):
 class ACUFleetManagerApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("ACU Target Manager - Bullwork Edition")
+        self.root.title("ACU Target Manager")
         self.root.update_idletasks()
         
+        # Get the directory where test_gui.py lives
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        icon_path = os.path.join(current_dir, "zap-rocket.png")
+        
+        # Safely load the icon
+        try:
+            icon_img = tk.PhotoImage(file=icon_path)
+            self.root.iconphoto(True, icon_img)
+        except Exception as e:
+            print(f"Could not load icon: {e}")
+
         window_height = 700
         x = int((self.root.winfo_screenwidth() / 2) - (600 / 2))
         y = int((self.root.winfo_screenheight() / 2) - (window_height / 2))
@@ -524,10 +540,13 @@ class ACUFleetManagerApp:
         self.db_status_label.config(text="Handshaking with Boot ROM...", fg=FG_COLOR)
         self.root.update()
         try:
-            bootloader_path = "/home/pruthvir/Documents/acu_fleet_manager/jetson_image_toolkit/Linux_for_Tegra/bootloader/"
+            # Dynamically target the bootloader folder!
+            bootloader_path = os.path.join(BASE_DIR, "jetson_image_toolkit", "Linux_for_Tegra", "bootloader")
+            
             result = self.run_sudo_cmd(['./tegrarcm_v2', '--new_session', '--chip', '0x23', '--uid'], cwd=bootloader_path)
             if result is None:
-                self.db_status_label.config(text="Target Scan Aborted.", fg=DANGER_RED); return
+                self.db_status_label.config(text="Target Scan Aborted.", fg=DANGER_RED)
+                return
             match = re.search(r'0x[0-9a-fA-F]+', result.stdout)
             if match:
                 self.current_uid = match.group(0)
